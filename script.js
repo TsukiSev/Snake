@@ -62,11 +62,12 @@ function update() {
   // Calcula la nueva posición de la cabeza
   const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-  // 1. Detección de colisión con las paredes
-  if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-    endGame();
-    return;
-  }
+  // 🌍 Movimiento continuo por los bordes
+if (head.x < 0) head.x = canvas.width - tileSize;
+else if (head.x >= canvas.width) head.x = 0;
+
+if (head.y < 0) head.y = canvas.height - tileSize;
+else if (head.y >= canvas.height) head.y = 0;
 
   // 2. Detección de colisión consigo misma
   for (let i = 1; i < snake.length; i++) {
