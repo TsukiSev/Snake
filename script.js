@@ -130,7 +130,7 @@ function isCollisionWithBody(head) {
 }
 
 function draw() {
-    ctx.fillStyle = "#000";
+    ctx.fillStyle = "#111111";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     snake.forEach((segment, index) => {

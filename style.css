@@ -1,7 +1,7 @@
 body {
     margin: 0;
     background: #1e1e1e;
-    color: #fff;
+    color: #f4f6f7;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -11,8 +11,8 @@ body {
 }
 
 canvas {
-    border: 3px solid #fff;
-    background: #000;
+    border: 3px solid #f4f6f7;
+    background: #111111;
 }
 
 /* Estilos para el menú de inicio */
@@ -28,6 +28,10 @@ canvas {
     padding: 8px;
     font-size: 16px;
     text-align: center;
+    background-color: #1e1e1e; /* fondo solicitado */
+    color: #f4f6f7; /* asegurar legibilidad del número */
+    border-radius: 4px;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 #startMenu button {
@@ -38,9 +42,33 @@ canvas {
     border: none;
     color: #000;
     font-weight: bold;
+    border-radius: 4px; /* esquinas redondeadas */
+    display: inline-flex; /* alinea icono y texto */
+    align-items: center;
+    gap: 15px;
+    transition: transform 150ms ease, box-shadow 150ms ease; /* transición suave */
+    will-change: transform;
 }
 
 /* Clase para ocultar elementos */
 .hidden {
     display: none;
+}
+
+/* Icono y texto del botón */
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    display: block; /* evita espacios en línea inesperados */
+}
+
+.btn-text {
+    line-height: 1; /* evita salto vertical por el SVG */
+}
+
+/* Efecto al pasar el cursor / focus (accesible) */
+#startMenu button:hover,
+#startMenu button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
