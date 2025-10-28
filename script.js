@@ -1,133 +1,164 @@
-// 🐍 Juego: Snake
+// 🐍 Juego: Snake - Versión Mejorada
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
+// Elementos del DOM para el menú
+const startMenu = document.getElementById('startMenu');
+const gameContainer = document.getElementById('gameContainer');
+const appleCountInput = document.getElementById('appleCount');
+const startButton = document.getElementById('startButton');
+
 // 🔧 Ajustes del lienzo y del juego
-const tileSize = 20; // Tamaño de cada cuadro (la cabeza de la serpiente, cuerpo, comida)
-canvas.width = 600;  // Ancho (múltiplo de tileSize)
-canvas.height = 600; // Alto (múltiplo de tileSize)
+const tileSize = 20;
+canvas.width = 600;
+canvas.height = 600;
 
 // 🐍 Configuración de la serpiente
-let snake = [
-  { x: tileSize * 10, y: tileSize * 10 } // Posición inicial en el centro
-];
-let direction = { x: 0, y: 0 }; // Dirección inicial (quieta)
-let newDirection = { x: 0, y: 0 }; // Para evitar que la serpiente se invierta
+let snake = [{ x: tileSize * 10, y: tileSize * 10 }];
+let direction = { x: 0, y: 0 };
+let newDirection = { x: 0, y: 0 };
 
-// 🍎 Comida
-let food = { x: 0, y: 0 };
+// 🍎 Comida (Ahora es un array para múltiples manzanas)
+let foods = [];
+let numberOfApples = 1;
 
 // 📊 Estado del juego
 let score = 0;
 let gameOver = false;
-let gameSpeed = 100; // milisegundos por frame (menor es más rápido)
+let gameSpeed = 100;
+
+// --- CONTROL DEL JUEGO ---
+
+startButton.addEventListener('click', () => {
+    const appleCount = parseInt(appleCountInput.value);
+    if (appleCount > 0 && appleCount <= 20) {
+        numberOfApples = appleCount;
+        startMenu.classList.add('hidden');
+        gameContainer.classList.remove('hidden');
+        initializeGame();
+    } else {
+        alert('Por favor, introduce un número de manzanas entre 1 y 20.');
+    }
+});
+
+window.addEventListener("keydown", (e) => {
+    switch (e.key.toLowerCase()) {
+        case "w": case "arrowup":
+            if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
+            break;
+        case "s": case "arrowdown":
+            if (direction.y === 0) newDirection = { x: 0, y: tileSize };
+            break;
+        case "a": case "arrowleft":
+            if (direction.x === 0) newDirection = { x: -tileSize, y: 0 };
+            break;
+        case "d": case "arrowright":
+            if (direction.x === 0) newDirection = { x: tileSize, y: 0 };
+            break;
+    }
+});
 
 // --- FUNCIONES DEL JUEGO ---
 
-// ✨ Genera una nueva posición para la comida
-function spawnFood() {
-  food.x = Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize;
-  food.y = Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize;
+function initializeGame() {
+    spawnFoods();
+    gameLoop();
 }
 
-// ⌨️ Control del jugador
-window.addEventListener("keydown", (e) => {
-  switch (e.key.toLowerCase()) {
-    case "w":
-    case "arrowup":
-      // Evita que la serpiente vaya en la dirección opuesta
-      if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
-      break;
-    case "s":
-    case "arrowdown":
-      if (direction.y === 0) newDirection = { x: 0, y: tileSize };
-      break;
-    case "a":
-    case "arrowleft":
-      if (direction.x === 0) newDirection = { x: -tileSize, y: 0 };
-      break;
-    case "d":
-    case "arrowright":
-      if (direction.x === 0) newDirection = { x: tileSize, y: 0 };
-      break;
-  }
-});
-
-// ⚙️ Actualizar la lógica y posiciones
-function update() {
-  if (gameOver) return;
-
-  direction = newDirection;
-
-  // Calcula la nueva posición de la cabeza
-  const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
-
-  // 1. Detección de colisión con las paredes
-  if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-    endGame();
-    return;
-  }
-
-  // 2. Detección de colisión consigo misma
-  for (let i = 1; i < snake.length; i++) {
-    if (head.x === snake[i].x && head.y === snake[i].y) {
-      endGame();
-      return;
+function spawnFoods() {
+    while (foods.length < numberOfApples) {
+        const isGolden = Math.random() < 0.1;
+        const newFood = {
+            x: Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize,
+            y: Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize,
+            color: isGolden ? "gold" : "red",
+            points: isGolden ? 10 : 1
+        };
+        foods.push(newFood);
     }
-  }
-
-  // Añade la nueva cabeza
-  snake.unshift(head);
-
-  // 3. Detección de colisión con la comida
-  if (head.x === food.x && head.y === food.y) {
-    score++;
-    spawnFood(); // Genera nueva comida
-    // La serpiente crece al no quitarle la cola
-  } else {
-    snake.pop(); // Si no come, quita el último segmento de la cola
-  }
 }
 
-// 🎨 Dibujar todo en pantalla
+function update() {
+    if (gameOver) return;
+
+    direction = newDirection;
+    const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || isCollisionWithBody(head)) {
+        endGame();
+        return;
+    }
+
+    snake.unshift(head);
+
+    let ateFood = false;
+    for (let i = foods.length - 1; i >= 0; i--) {
+        let food = foods[i];
+        if (head.x === food.x && head.y === food.y) {
+            score += food.points;
+
+            // ---- ¡CAMBIO IMPORTANTE AQUÍ! ----
+            // Si es una manzana dorada, añade 9 segmentos extra a la cola.
+            // (El crecimiento normal de 1 segmento ya está incluido, sumando 10 en total).
+            if (food.points === 10) {
+                const tail = snake[snake.length - 1]; // Identifica cuál es la cola
+                for (let j = 0; j < 9; j++) {
+                    snake.push({ ...tail }); // Agrega 9 copias de la cola al final
+                }
+            }
+            // ---- FIN DEL CAMBIO ----
+
+            foods.splice(i, 1);
+            ateFood = true;
+            spawnFoods();
+            break;
+        }
+    }
+
+    if (!ateFood) {
+        snake.pop();
+    }
+}
+
+function isCollisionWithBody(head) {
+    for (let i = 1; i < snake.length; i++) {
+        if (head.x === snake[i].x && head.y === snake[i].y) {
+            return true;
+        }
+    }
+    return false;
+}
+
 function draw() {
-  // Fondo negro
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Dibuja la serpiente
-  snake.forEach((segment, index) => {
-    ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000"; // Cabeza verde brillante
-    ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-    ctx.strokeStyle = "#000"; // Borde para cada segmento
-    ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
-  });
+    snake.forEach((segment, index) => {
+        ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000";
+        ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+        ctx.strokeStyle = "#000";
+        ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+    });
 
-  // Dibuja la comida
-  ctx.fillStyle = "red";
-  ctx.fillRect(food.x, food.y, tileSize, tileSize);
+    foods.forEach(food => {
+        ctx.fillStyle = food.color;
+        ctx.fillRect(food.x, food.y, tileSize, tileSize);
+    });
 
-  // Dibuja la puntuación
-  ctx.fillStyle = "white";
-  ctx.font = "24px 'Courier New', Courier, monospace";
-  ctx.fillText("Score: " + score, 10, 30);
+    ctx.fillStyle = "white";
+    ctx.font = "24px 'Courier New', Courier, monospace";
+    ctx.fillText("Score: " + score, 10, 30);
 }
 
-// 💀 Función para terminar el juego
 function endGame() {
-  gameOver = true;
-  alert(`💀 Game Over!\nPuntuación final: ${score}`);
-  // Recarga la página para reiniciar
-  window.location.reload();
+    gameOver = true;
+    alert(`💀 Game Over!\nPuntuación final: ${score}`);
+    window.location.reload();
 }
 
-// 🌀 Bucle principal del juego
 function gameLoop() {
-  update();
-  draw();
-  setTimeout(gameLoop, gameSpeed);
+    if (gameOver) return;
+    update();
+    draw();
+    setTimeout(gameLoop, gameSpeed);
 }
-
-// --- INICIO DEL JUEGO ---
-spawnFood(); // Coloca la primera comida
-gameLoop();  // ¡Empieza el juego!
