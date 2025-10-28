@@ -72,3 +72,55 @@ canvas {
     transform: translateY(-2px);
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
 }
+
+/* Estilos para el modal de Game Over */
+#gameOverModal {
+    position: fixed;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 50;
+}
+
+.modal-content {
+    background: #111;
+    color: #fff;
+    padding: 18px 22px;
+    border-radius: 8px;
+    min-width: 260px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+.modal-actions {
+    margin-top: 12px;
+}
+
+.modal-actions button {
+    padding: 8px 14px;
+    font-weight: bold;
+    background: #00FF00;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-actions button:hover {
+    transform: translateY(-1px);
+}
+
+/* Botón secundario dentro del modal (volver al menú) */
+.modal-actions button.secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-left: 8px;
+}
+
+.modal-actions button.secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}

@@ -22,6 +22,12 @@ let newDirection = { x: 0, y: 0 };
 let foods = [];
 let numberOfApples = 1;
 
+// Imágenes de manzanas (SVG externos 64x64)
+const appleImg = new Image();
+appleImg.src = 'assets/apple-red.svg';
+const goldAppleImg = new Image();
+goldAppleImg.src = 'assets/apple-gold.svg';
+
 // 📊 Estado del juego
 let score = 0;
 let gameOver = false;
@@ -72,6 +78,7 @@ function spawnFoods() {
             x: Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize,
             y: Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize,
             color: isGolden ? "gold" : "red",
+            img: isGolden ? goldAppleImg : appleImg,
             points: isGolden ? 10 : 1
         };
         foods.push(newFood);
@@ -141,8 +148,14 @@ function draw() {
     });
 
     foods.forEach(food => {
-        ctx.fillStyle = food.color;
-        ctx.fillRect(food.x, food.y, tileSize, tileSize);
+        // Dibujar la imagen SVG si está cargada; en caso contrario usar el rectángulo de color
+        if (food.img && food.img.complete) {
+            // Ajustamos para centrar si la imagen es mayor que el tileSize
+            ctx.drawImage(food.img, food.x, food.y, tileSize, tileSize);
+        } else {
+            ctx.fillStyle = food.color;
+            ctx.fillRect(food.x, food.y, tileSize, tileSize);
+        }
     });
 
     ctx.fillStyle = "white";
