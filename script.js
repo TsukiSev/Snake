@@ -1,16 +1,16 @@
-// 🐍 Juego: Snake Avanzado (Menú, Múltiples Manzanas Doradas, Obstáculos y Sonidos)
+// 🐍 Juego: Snake Avanzado (Menú, Múltiples Manzanas Doradas, Obstáculos, Tiempo de Vida y Sonidos)
 
 // --- ACCESO AL DOM Y CONFIGURACIÓN INICIAL ---
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Elementos del DOM para el menú (De finalentoeria)
+// Elementos del DOM para el menú
 const startMenu = document.getElementById('startMenu');
 const gameContainer = document.getElementById('gameContainer');
 const appleCountInput = document.getElementById('appleCount');
 const startButton = document.getElementById('startButton');
 
-// 🎵 Sonidos (De David_s)
+// 🎵 Sonidos
 const bgMusic = document.getElementById("bgMusic");
 const eatSound = document.getElementById("eatSound");
 const loseSound = document.getElementById("loseSound");
@@ -25,9 +25,10 @@ let snake = [{ x: tileSize * 10, y: tileSize * 10 }];
 let direction = { x: 0, y: 0 };
 let newDirection = { x: 0, y: 0 };
 
-// 🍎 Comida (Ahora es un array para múltiples manzanas)
+// 🍎 Comida
 let foods = [];
 let numberOfApples = 1;
+const APPLE_LIFETIME = 7000; // Tiempo de vida de la manzana en milisegundos
 
 // 💀 Obstáculos
 let obstacles = [];
@@ -50,8 +51,9 @@ startButton.addEventListener('click', () => {
 
         // Reiniciar variables para un nuevo juego
         snake = [{ x: tileSize * 10, y: tileSize * 10 }];
-        direction = { x: 0, y: 0 };
-        newDirection = { x: 0, y: 0 };
+        // Inicializar dirección para que la serpiente se mueva inmediatamente
+        direction = { x: tileSize, y: 0 };
+        newDirection = { x: tileSize, y: 0 };
         foods = [];
         obstacles = [];
         score = 0;
@@ -60,7 +62,6 @@ startButton.addEventListener('click', () => {
         
         initializeGame();
     } else {
-        // En este entorno, usamos alert() para feedback, aunque no es ideal.
         alert('Por favor, introduce un número de manzanas entre 1 y 20.');
     }
 });
@@ -93,15 +94,14 @@ function initializeGame() {
             // readyState 3 significa que hay suficientes datos para empezar a reproducir
             if (bgMusic.readyState >= 3) {
                 bgMusic.volume = 0.3;
-                bgMusic.play().catch(e => console.warn("Error al reproducir música de fondo. Intentando reiniciar la carga.", e));
+                bgMusic.play().catch(e => console.warn("Error al reproducir música de fondo.", e));
             } else {
-                // Si no está listo, forzamos la recarga y reintentamos
                 console.warn("Música de fondo no cargada. Reintentando.");
-                bgMusic.load(); // Intenta forzar la recarga
+                bgMusic.load(); 
                 setTimeout(() => { 
                     bgMusic.volume = 0.3;
                     bgMusic.play().catch(e => console.error("Error final al reproducir la música de fondo.", e));
-                }, 200); // Pequeño retraso antes de reintentar la reproducción
+                }, 200); 
             }
         }, 50); 
     }
@@ -127,7 +127,7 @@ function randomGridPosition() {
     return position;
 }
 
-// 🍎 Genera comida hasta alcanzar la cantidad deseada (incluye manzanas doradas)
+// 🍎 Genera comida hasta alcanzar la cantidad deseada (incluye manzanas doradas y spawnTime)
 function spawnFoods() {
     while (foods.length < numberOfApples) {
         const isGolden = Math.random() < 0.1; // 10% de probabilidad de ser dorada
@@ -137,7 +137,8 @@ function spawnFoods() {
             x: newFoodPosition.x,
             y: newFoodPosition.y,
             color: isGolden ? "gold" : "red",
-            points: isGolden ? 10 : 1
+            points: isGolden ? 10 : 1,
+            spawnTime: Date.now() // Añadimos el tiempo de aparición
         };
         foods.push(newFood);
     }
@@ -161,11 +162,26 @@ function spawnObstacle() {
     obstacles.push(newObstaclePosition);
 }
 
+// NUEVA FUNCIÓN: Actualiza y elimina manzanas expiradas
+function updateFoodTimers() {
+    const currentTime = Date.now();
+    for (let i = foods.length - 1; i >= 0; i--) {
+        const food = foods[i];
+        const timeAlive = currentTime - food.spawnTime;
+        if (timeAlive >= APPLE_LIFETIME) {
+            foods.splice(i, 1);
+        }
+    }
+    spawnFoods(); // Intenta generar nuevas manzanas si faltan
+}
+
 // ⚙️ Revisa colisiones (cuerpo propio y obstáculos)
 function isCollisionWithBodyOrObstacle(head) {
+    // Colisión con el cuerpo propio
     for (let i = 1; i < snake.length; i++) {
         if (head.x === snake[i].x && head.y === snake[i].y) return true;
     }
+    // Colisión con obstáculos
     for (const obs of obstacles) {
         if (head.x === obs.x && obs.y === head.y) return true;
     }
@@ -208,7 +224,7 @@ function update() {
                 eatSound.play().catch(e => console.warn("Error al reproducir sonido de comer.", e));
             }
 
-            // Crecimiento extra por manzana dorada
+            // Crecimiento extra por manzana dorada (Método robusto)
             if (food.points === 10) {
                 const tail = snake[snake.length - 1];
                 for (let j = 0; j < 9; j++) {
@@ -218,7 +234,7 @@ function update() {
 
             foods.splice(i, 1);
             ateFood = true;
-            spawnFoods(); 
+            // Eliminamos spawnFoods() de aquí, ya que updateFoodTimers() lo llama al final.
             break;
         }
     }
@@ -228,7 +244,10 @@ function update() {
         snake.pop();
     }
 
-    // 4️⃣ Generación aleatoria de obstáculos
+    // 4️⃣ Actualiza y elimina manzanas expiradas (Manzana-Tiempo)
+    updateFoodTimers();
+
+    // 5️⃣ Generación aleatoria de obstáculos (finalentoeria)
     const now = Date.now();
     if (now - lastObstacleCheck >= obstacleCheckInterval) {
         lastObstacleCheck = now;
@@ -259,10 +278,25 @@ function draw() {
         ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
     });
 
-    // Comida
+    // Dibuja manzanas con barra de tiempo
+    const currentTime = Date.now();
     foods.forEach(food => {
+        const timeAlive = currentTime - food.spawnTime;
+        // Aseguramos que el porcentaje no sea negativo
+        const timePercent = Math.max(0, (APPLE_LIFETIME - timeAlive) / APPLE_LIFETIME); 
+        
         ctx.fillStyle = food.color;
         ctx.fillRect(food.x, food.y, tileSize, tileSize);
+        
+        // Barra de tiempo: Fondo negro/gris
+        ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+        ctx.fillRect(food.x, food.y + tileSize - 3, tileSize, 3);
+        
+        // Barra de tiempo: Color (Verde > Amarillo > Rojo)
+        ctx.fillStyle = timePercent > 0.6 ? "#00FF00" : timePercent > 0.3 ? "#FFFF00" : "#FF0000";
+        ctx.fillRect(food.x, food.y + tileSize - 3, tileSize * timePercent, 3);
+
+        // Borde para dorada
         ctx.strokeStyle = food.color === "gold" ? "#FFD700" : "#8B0000"; 
         ctx.strokeRect(food.x, food.y, tileSize, tileSize);
     });
@@ -285,8 +319,10 @@ function endGame() {
 
     // Se usa un setTimeout para dar tiempo al sonido de perder, si está disponible.
     setTimeout(() => {
-        // Mantenemos alert() para dar feedback inmediato al usuario en este entorno.
         alert(`💀 Game Over!\nPuntuación final: ${score}`);
+        // Volvemos a mostrar el menú para reiniciar
+        gameContainer.classList.add('hidden');
+        startMenu.classList.remove('hidden');
     }, 500); 
 }
 
