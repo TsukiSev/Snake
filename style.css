@@ -1,16 +1,46 @@
 body {
-  margin: 0;
-  background: #1e1e1e;
-  color: #fff;
-  display: flex;
-  flex-direction: column; /* Para poner el título arriba del canvas */
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  font-family: 'Courier New', Courier, monospace;
+    margin: 0;
+    background: #1e1e1e;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    font-family: 'Courier New', Courier, monospace;
 }
 
 canvas {
-  border: 3px solid #fff;
-  background: #000;
+    border: 3px solid #fff;
+    background: #000;
+}
+
+/* Estilos para el menú de inicio */
+#startMenu {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px; /* Espacio entre elementos */
+}
+
+#startMenu input {
+    width: 80px;
+    padding: 8px;
+    font-size: 16px;
+    text-align: center;
+}
+
+#startMenu button {
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+    background-color: #00FF00;
+    border: none;
+    color: #000;
+    font-weight: bold;
+}
+
+/* Clase para ocultar elementos */
+.hidden {
+    display: none;
 }

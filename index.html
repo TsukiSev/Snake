@@ -1,19 +1,59 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <title>Juego de Snake</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <h1>SNAKE 🐍</h1>
-    <canvas id="gameCanvas"></canvas>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Snake Avanzado</title>
+    <!-- Carga de Tailwind CSS para el estilo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para el canvas */
+        #gameCanvas {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+        }
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex flex-col items-center justify-center min-h-screen p-4">
 
-    <!-- 🎵 Archivos de audio -->
-    <audio id="bgMusic" src="sounds/background.mp3" loop></audio>
-    <audio id="eatSound" src="sounds/eat.mp3"></audio>
-    <audio id="loseSound" src="sounds/lose.mp3"></audio>
+    <!-- MENÚ DE INICIO (De finalentoeria, estilizado con Tailwind) -->
+    <div id="startMenu" class="bg-gray-800 p-8 rounded-xl shadow-2xl max-w-sm w-full border-t-4 border-green-500">
+        <h1 class="text-4xl font-extrabold text-green-400 mb-6 text-center">SNAKE 🐍</h1>
+        
+        <div class="mb-6">
+            <label for="appleCount" class="block text-sm font-medium mb-2 text-gray-300">Elige la cantidad de manzanas (1-20):</label>
+            <input 
+                type="number" 
+                id="appleCount" 
+                value="1" 
+                min="1" 
+                max="20"
+                class="w-full p-3 border border-gray-600 rounded-lg bg-gray-700 text-white focus:ring-green-500 focus:border-green-500 transition duration-150"
+            >
+        </div>
+        
+        <button 
+            id="startButton" 
+            class="w-full bg-green-600 hover:bg-green-500 text-gray-900 font-bold py-3 rounded-lg shadow-md transition duration-200 transform hover:scale-[1.02] active:scale-[0.98]"
+        >
+            ¡Iniciar Juego!
+        </button>
+    </div>
+
+    <!-- CONTENEDOR DEL JUEGO (De finalentoeria) -->
+    <div id="gameContainer" class="hidden flex-col items-center">
+        <h1 class="text-4xl font-extrabold text-green-400 mb-6">SNAKE 🐍</h1>
+        <canvas id="gameCanvas" width="600" height="600" class="border-4 border-green-500 rounded-lg"></canvas>
+    </div>
+
+    <!-- 🎵 ARCHIVOS DE AUDIO (De David_s) -->
+    <!-- Nota: Los atributos src se han vaciado ya que los archivos locales no se pueden cargar en este entorno. -->
+    <audio id="bgMusic" src="" loop></audio>
+    <audio id="eatSound" src=""></audio>
+    <audio id="loseSound" src=""></audio>
 
     <script src="script.js"></script>
-  </body>
+</body>
 </html>
