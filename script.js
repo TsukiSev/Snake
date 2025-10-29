@@ -1,18 +1,16 @@
-// 🐍 Juego: Snake
+// 🐍 Juego: Snake con sonidos
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// 🔧 Ajustes del lienzo y del juego
-const tileSize = 20; // Tamaño de cada cuadro (la cabeza de la serpiente, cuerpo, comida)
-canvas.width = 600;  // Ancho (múltiplo de tileSize)
-canvas.height = 600; // Alto (múltiplo de tileSize)
+// 🔧 Ajustes
+const tileSize = 20;
+canvas.width = 600;
+canvas.height = 600;
 
-// 🐍 Configuración de la serpiente
-let snake = [
-  { x: tileSize * 10, y: tileSize * 10 } // Posición inicial en el centro
-];
-let direction = { x: 0, y: 0 }; // Dirección inicial (quieta)
-let newDirection = { x: 0, y: 0 }; // Para evitar que la serpiente se invierta
+// 🐍 Serpiente
+let snake = [{ x: tileSize * 10, y: tileSize * 10 }];
+let direction = { x: 0, y: 0 };
+let newDirection = { x: 0, y: 0 };
 
 // 🍎 Comida
 let food = { x: 0, y: 0 };
@@ -20,22 +18,30 @@ let food = { x: 0, y: 0 };
 // 📊 Estado del juego
 let score = 0;
 let gameOver = false;
-let gameSpeed = 100; // milisegundos por frame (menor es más rápido)
+let gameSpeed = 100;
+
+// 🎵 Sonidos
+const bgMusic = document.getElementById("bgMusic");
+const eatSound = document.getElementById("eatSound");
+const loseSound = document.getElementById("loseSound");
 
 // --- FUNCIONES DEL JUEGO ---
-
-// ✨ Genera una nueva posición para la comida
 function spawnFood() {
   food.x = Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize;
   food.y = Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize;
 }
 
-// ⌨️ Control del jugador
+// ⌨️ Movimiento
 window.addEventListener("keydown", (e) => {
+  // Inicia la música solo la primera vez que el jugador se mueve
+  if (bgMusic.paused) {
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+  }
+
   switch (e.key.toLowerCase()) {
     case "w":
     case "arrowup":
-      // Evita que la serpiente vaya en la dirección opuesta
       if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
       break;
     case "s":
@@ -53,22 +59,21 @@ window.addEventListener("keydown", (e) => {
   }
 });
 
-// ⚙️ Actualizar la lógica y posiciones
+// ⚙️ Lógica principal
 function update() {
   if (gameOver) return;
 
   direction = newDirection;
 
-  // Calcula la nueva posición de la cabeza
   const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-  // 1. Detección de colisión con las paredes
+  // 💥 Colisión con paredes
   if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
     endGame();
     return;
   }
 
-  // 2. Detección de colisión consigo misma
+  // 💥 Colisión consigo misma
   for (let i = 1; i < snake.length; i++) {
     if (head.x === snake[i].x && head.y === snake[i].y) {
       endGame();
@@ -76,58 +81,61 @@ function update() {
     }
   }
 
-  // Añade la nueva cabeza
   snake.unshift(head);
 
-  // 3. Detección de colisión con la comida
+  // 🍎 Comer comida
   if (head.x === food.x && head.y === food.y) {
     score++;
-    spawnFood(); // Genera nueva comida
-    // La serpiente crece al no quitarle la cola
+    eatSound.currentTime = 0;
+    eatSound.play();
+    spawnFood();
   } else {
-    snake.pop(); // Si no come, quita el último segmento de la cola
+    snake.pop();
   }
 }
 
-// 🎨 Dibujar todo en pantalla
+// 🎨 Dibujar
 function draw() {
-  // Fondo negro
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Dibuja la serpiente
+  // Serpiente
   snake.forEach((segment, index) => {
-    ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000"; // Cabeza verde brillante
+    ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000";
     ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-    ctx.strokeStyle = "#000"; // Borde para cada segmento
+    ctx.strokeStyle = "#000";
     ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
   });
 
-  // Dibuja la comida
+  // 🍎 Comida (manzana roja)
   ctx.fillStyle = "red";
-  ctx.fillRect(food.x, food.y, tileSize, tileSize);
+  ctx.beginPath();
+  ctx.arc(food.x + tileSize / 2, food.y + tileSize / 2, tileSize / 2, 0, Math.PI * 2);
+  ctx.fill();
 
-  // Dibuja la puntuación
+  // Puntuación
   ctx.fillStyle = "white";
-  ctx.font = "24px 'Courier New', Courier, monospace";
+  ctx.font = "24px 'Courier New'";
   ctx.fillText("Score: " + score, 10, 30);
 }
 
-// 💀 Función para terminar el juego
+// 💀 Fin del juego
 function endGame() {
   gameOver = true;
-  alert(`💀 Game Over!\nPuntuación final: ${score}`);
-  // Recarga la página para reiniciar
-  window.location.reload();
+  bgMusic.pause();
+  loseSound.play();
+  setTimeout(() => {
+    alert(`💀 Game Over!\nPuntuación final: ${score}`);
+    window.location.reload();
+  }, 500);
 }
 
-// 🌀 Bucle principal del juego
+// 🌀 Bucle principal
 function gameLoop() {
   update();
   draw();
   setTimeout(gameLoop, gameSpeed);
 }
 
-// --- INICIO DEL JUEGO ---
-spawnFood(); // Coloca la primera comida
-gameLoop();  // ¡Empieza el juego!
+spawnFood();
+gameLoop();
