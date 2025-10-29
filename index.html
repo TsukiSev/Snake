@@ -1,19 +1,141 @@
 <!DOCTYPE html>
 <html lang="es">
-  <head>
+<head>
     <meta charset="UTF-8" />
-    <title>Juego de Snake</title>
-    <link rel="stylesheet" href="style.css" />
-  </head>
-  <body>
-    <h1>SNAKE 🐍</h1>
-    <canvas id="gameCanvas"></canvas>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Snake Avanzado</title>
+    <!-- Carga de Tailwind CSS para el estilo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* --- ESTILOS CSS MERGEADOS --- */
 
-    <!-- 🎵 Archivos de audio -->
-    <audio id="bgMusic" src="sounds/background.mp3" loop></audio>
-    <audio id="eatSound" src="sounds/eat.mp3"></audio>
-    <audio id="loseSound" src="sounds/lose.mp3"></audio>
+        body {
+            margin: 0;
+            /* Flex-direction from finalentoeria */
+            flex-direction: column; 
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        /* #gameContainer ahora define el contexto de posición para el menú superpuesto */
+        #gameContainer {
+            position: relative; 
+            width: 600px; /* Coincide con el tamaño del canvas */
+            height: 600px; /* Coincide con el tamaño del canvas */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            /* Tailwind en HTML maneja el borde y la sombra del canvas */
+        }
+
+        /* Estilos para el menú de inicio: Superponer y Centrar (Manzana-Tiempo) */
+        #startMenu {
+            /* Se superpone al canvas */
+            position: absolute; 
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            
+            /* Centrado de contenido interno usando Flexbox */
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+            justify-content: center; 
+            
+            /* Fondo semi-oscuro para contraste (Estilo heredado/ajustado) */
+            background-color: rgba(0, 0, 0, 0.7); 
+            gap: 15px; /* Espacio entre elementos */
+            z-index: 10; 
+            
+            /* Estilos de Manzana-Tiempo para input y button */
+        }
+        
+        #startMenu h1 {
+            margin-bottom: 30px; 
+            font-size: 3em;
+        }
+
+        #startMenu input {
+            width: 80px;
+            padding: 8px;
+            font-size: 16px;
+            text-align: center;
+            border: 1px solid #fff;
+            border-radius: 4px;
+            background: #444;
+            color: #fff;
+        }
+
+        #startMenu button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+            background-color: #00FF00;
+            border: none;
+            color: #000;
+            font-weight: bold;
+            border-radius: 5px;
+            transition: background-color 0.2s;
+        }
+
+        #startMenu button:hover {
+            background-color: #2ecc71;
+        }
+
+        /* Clase para ocultar elementos (se mantiene !important) */
+        .hidden {
+            display: none !important;
+        }
+
+        /* Estilos específicos del canvas/juego */
+        #gameCanvas {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+            /* Borde y fondo manejados por Tailwind/Canvas en JS */
+        }
+
+        /* Título del juego (para mostrar durante la partida) */
+        .game-title {
+            position: absolute;
+            top: -50px; /* Posicionar sobre el canvas */
+            z-index: 5;
+            font-size: 2rem;
+            color: #10B981; /* Verde Tailwind */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen p-4">
+
+    <!-- CONTENEDOR PRINCIPAL DEL JUEGO (Necesita ser relative) -->
+    <div id="gameContainer" class="border-4 border-green-500 rounded-lg">
+        
+        <!-- MENÚ DE INICIO (Ahora posicionado absolutamente dentro de gameContainer) -->
+        <div id="startMenu" class="rounded-xl shadow-2xl max-w-sm w-full border-t-4 border-green-500">
+            <h1 class="text-4xl font-extrabold text-green-400 text-center">SNAKE 🐍</h1>
+            
+            <label for="appleCount" class="block text-sm font-medium text-gray-300">Elige la cantidad de manzanas (1-20):</label>
+            <input 
+                type="number" 
+                id="appleCount" 
+                value="1" 
+                min="1" 
+                max="20"
+            >
+            <button id="startButton">¡Iniciar Juego!</button>
+        </div>
+
+        <!-- Título que se muestra cuando el menú está oculto (Ajustado para el nuevo layout) -->
+        <h1 id="gameTitle" class="game-title hidden">SNAKE 🐍</h1>
+
+        <!-- CANVAS -->
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <!-- 🎵 ARCHIVOS DE AUDIO -->
+    <audio id="bgMusic" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-loop-1875.mp3" loop preload="auto"></audio>
+    <audio id="eatSound" src="https://assets.mixkit.co/sfx/preview/mixkit-select-click-2d-game-1191.mp3" preload="auto"></audio>
+    <audio id="loseSound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-over-1981.mp3" preload="auto"></audio>
 
     <script src="script.js"></script>
-  </body>
+</body>
 </html>
