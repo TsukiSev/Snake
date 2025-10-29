@@ -28,6 +28,16 @@ appleImg.src = 'assets/apple-red.svg';
 const goldAppleImg = new Image();
 goldAppleImg.src = 'assets/apple-gold.svg';
 
+// Imagen de fondo (SVG externo)
+const bgImg = new Image();
+bgImg.src = 'assets/background.svg';
+
+// Imágenes de la serpiente (SVG externos 64x64)
+const snakeHeadImg = new Image();
+snakeHeadImg.src = 'assets/snake-head.svg';
+const snakeBodyImg = new Image();
+snakeBodyImg.src = 'assets/snake-body.svg';
+
 // 📊 Estado del juego
 let score = 0;
 let gameOver = false;
@@ -137,14 +147,54 @@ function isCollisionWithBody(head) {
 }
 
 function draw() {
-    ctx.fillStyle = "#111111";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Dibujar imagen de fondo si está cargada, si no usar color sólido
+    if (bgImg && bgImg.complete) {
+        try {
+            ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+        } catch (e) {
+            // En casos raros drawImage puede fallar por CORS o por datos inválidos; fallback
+            ctx.fillStyle = "#111111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+    } else {
+        ctx.fillStyle = "#111111";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
 
     snake.forEach((segment, index) => {
-        ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000";
-        ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-        ctx.strokeStyle = "#000";
-        ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+        // Cabeza
+        if (index === 0) {
+            if (snakeHeadImg && snakeHeadImg.complete) {
+                // Dibujar la cabeza rotada según la dirección actual
+                ctx.save();
+                const cx = segment.x + tileSize / 2;
+                const cy = segment.y + tileSize / 2;
+                ctx.translate(cx, cy);
+                let angle = 0;
+                if (direction.x > 0) angle = 0; // derecha
+                else if (direction.x < 0) angle = Math.PI; // izquierda
+                else if (direction.y > 0) angle = Math.PI / 2; // abajo
+                else if (direction.y < 0) angle = -Math.PI / 2; // arriba
+                ctx.rotate(angle);
+                ctx.drawImage(snakeHeadImg, -tileSize / 2, -tileSize / 2, tileSize, tileSize);
+                ctx.restore();
+            } else {
+                ctx.fillStyle = "#00FF00";
+                ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+            }
+        } else {
+            // Cuerpo/cola
+            if (snakeBodyImg && snakeBodyImg.complete) {
+                ctx.drawImage(snakeBodyImg, segment.x, segment.y, tileSize, tileSize);
+            } else {
+                ctx.fillStyle = "#00A000";
+                ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+                ctx.strokeStyle = "#000";
+                ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+            }
+        }
     });
 
     foods.forEach(food => {
