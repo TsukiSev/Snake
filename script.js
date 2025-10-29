@@ -1,20 +1,25 @@
-// 🐍 Juego: Snake con obstáculos aleatorios (50% de probabilidad cada 5s) + versión mejorada con menú y manzanas múltiples + movimiento continuo por los bordes
+// 🐍 Snake completo: menú + obstáculos + bordes continuos + sonidos + manzanas múltiples
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// Elementos del DOM para el menú
-const startMenu = document.getElementById('startMenu');
-const gameContainer = document.getElementById('gameContainer');
-const appleCountInput = document.getElementById('appleCount');
-const startButton = document.getElementById('startButton');
+// Elementos del DOM
+const startMenu = document.getElementById("startMenu");
+const gameContainer = document.getElementById("gameContainer");
+const appleCountInput = document.getElementById("appleCount");
+const startButton = document.getElementById("startButton");
 
-// 🔧 Ajustes del lienzo y del juego
+// 🎵 Sonidos
+const bgMusic = document.getElementById("bgMusic");
+const eatSound = document.getElementById("eatSound");
+const loseSound = document.getElementById("loseSound");
+
+// 🔧 Configuración del lienzo y del juego
 const tileSize = 20;
 canvas.width = 600;
 canvas.height = 600;
 
-// 🐍 Configuración de la serpiente
+// 🐍 Serpiente
 let snake = [{ x: tileSize * 10, y: tileSize * 10 }];
 let direction = { x: 0, y: 0 };
 let newDirection = { x: 0, y: 0 };
@@ -25,7 +30,7 @@ let numberOfApples = 1;
 
 // 💀 Obstáculos
 let obstacles = [];
-let obstacleCheckInterval = 5000; // cada 5 segundos se revisa si aparece uno nuevo
+let obstacleCheckInterval = 5000; // cada 5s
 let lastObstacleCheck = Date.now();
 
 // 📊 Estado del juego
@@ -33,39 +38,48 @@ let score = 0;
 let gameOver = false;
 let gameSpeed = 100;
 
-// --- CONTROL DEL JUEGO ---
-
-startButton.addEventListener('click', () => {
+// --- CONTROL DEL MENÚ ---
+startButton.addEventListener("click", () => {
   const appleCount = parseInt(appleCountInput.value);
   if (appleCount > 0 && appleCount <= 20) {
     numberOfApples = appleCount;
-    startMenu.classList.add('hidden');
-    gameContainer.classList.remove('hidden');
+    startMenu.classList.add("hidden");
+    gameContainer.classList.remove("hidden");
     initializeGame();
   } else {
-    alert('Por favor, introduce un número de manzanas entre 1 y 20.');
+    alert("Por favor, introduce un número de manzanas entre 1 y 20.");
   }
 });
 
+// --- CONTROL DEL TECLADO ---
 window.addEventListener("keydown", (e) => {
+  // Inicia la música al primer movimiento
+  if (bgMusic && bgMusic.paused) {
+    bgMusic.volume = 0.3;
+    bgMusic.play();
+  }
+
   switch (e.key.toLowerCase()) {
-    case "w": case "arrowup":
+    case "w":
+    case "arrowup":
       if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
       break;
-    case "s": case "arrowdown":
+    case "s":
+    case "arrowdown":
       if (direction.y === 0) newDirection = { x: 0, y: tileSize };
       break;
-    case "a": case "arrowleft":
+    case "a":
+    case "arrowleft":
       if (direction.x === 0) newDirection = { x: -tileSize, y: 0 };
       break;
-    case "d": case "arrowright":
+    case "d":
+    case "arrowright":
       if (direction.x === 0) newDirection = { x: tileSize, y: 0 };
       break;
   }
 });
 
 // --- FUNCIONES DEL JUEGO ---
-
 function initializeGame() {
   spawnFoods();
   gameLoop();
@@ -79,7 +93,7 @@ function randomGridPosition() {
   };
 }
 
-// 🍎 Genera comida evitando la serpiente y los obstáculos
+// 🍎 Genera comidas evitando la serpiente y los obstáculos
 function spawnFoods() {
   while (foods.length < numberOfApples) {
     const isGolden = Math.random() < 0.1;
@@ -94,7 +108,7 @@ function spawnFoods() {
     foods.push({
       ...newFood,
       color: isGolden ? "gold" : "red",
-      points: isGolden ? 10 : 1
+      points: isGolden ? 10 : 1,
     });
   }
 }
@@ -112,6 +126,7 @@ function spawnObstacle() {
   obstacles.push(newObstacle);
 }
 
+// 🔁 Actualiza el juego
 function update() {
   if (gameOver) return;
 
@@ -124,7 +139,7 @@ function update() {
   if (head.y < 0) head.y = canvas.height - tileSize;
   else if (head.y >= canvas.height) head.y = 0;
 
-  // Colisión con obstáculos
+  // 💥 Colisión con obstáculos
   for (const obs of obstacles) {
     if (head.x === obs.x && head.y === obs.y) {
       endGame();
@@ -132,7 +147,7 @@ function update() {
     }
   }
 
-  // Colisión consigo misma
+  // 💥 Colisión consigo misma
   if (isCollisionWithBody(head)) {
     endGame();
     return;
@@ -140,14 +155,18 @@ function update() {
 
   snake.unshift(head);
 
-  // Comida
+  // 🍎 Comida
   let ateFood = false;
   for (let i = foods.length - 1; i >= 0; i--) {
     let food = foods[i];
     if (head.x === food.x && head.y === food.y) {
       score += food.points;
+      if (eatSound) {
+        eatSound.currentTime = 0;
+        eatSound.play();
+      }
 
-      // Si es manzana dorada, añade segmentos extra
+      // 🍏 Si es manzana dorada, añade más segmentos
       if (food.points === 10) {
         const tail = snake[snake.length - 1];
         for (let j = 0; j < 9; j++) {
@@ -164,7 +183,7 @@ function update() {
 
   if (!ateFood) snake.pop();
 
-  // Cada 5s, 50% de probabilidad de generar obstáculo
+  // ⏱️ Cada 5s, 50% de probabilidad de generar obstáculo
   const now = Date.now();
   if (now - lastObstacleCheck >= obstacleCheckInterval) {
     lastObstacleCheck = now;
@@ -181,6 +200,7 @@ function isCollisionWithBody(head) {
   return false;
 }
 
+// 🎨 Dibuja todo
 function draw() {
   ctx.fillStyle = "#000";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -202,7 +222,7 @@ function draw() {
   });
 
   // Comidas
-  foods.forEach(food => {
+  foods.forEach((food) => {
     ctx.fillStyle = food.color;
     ctx.fillRect(food.x, food.y, tileSize, tileSize);
   });
@@ -213,12 +233,18 @@ function draw() {
   ctx.fillText("Score: " + score, 10, 30);
 }
 
+// 💀 Fin del juego
 function endGame() {
   gameOver = true;
-  alert(`💀 Game Over!\nPuntuación final: ${score}`);
-  window.location.reload();
+  if (bgMusic) bgMusic.pause();
+  if (loseSound) loseSound.play();
+  setTimeout(() => {
+    alert(`💀 Game Over!\nPuntuación final: ${score}`);
+    window.location.reload();
+  }, 500);
 }
 
+// 🔁 Bucle principal
 function gameLoop() {
   if (gameOver) return;
   update();

@@ -1,40 +1,31 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <title>Juego de Snake Avanzado</title>
-    <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8" />
+  <title>Juego de Snake Avanzado</title>
+  <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
-<<<<<<< HEAD
-    <div id="startMenu">
-        <h1>SNAKE 🐍</h1>
-        <label for="appleCount">Elige la cantidad de manzanas:</label>
-        <input type="number" id="appleCount" value="1" min="1" max="20">
-        <button id="startButton">¡Iniciar Juego!</button>
-    </div>
+  <!-- 🐍 Menú de inicio -->
+  <div id="startMenu">
+    <h1>SNAKE 🐍</h1>
+    <label for="appleCount">Elige la cantidad de manzanas:</label>
+    <input type="number" id="appleCount" value="1" min="1" max="20">
+    <button id="startButton">¡Iniciar Juego!</button>
+  </div>
 
-    <div id="gameContainer" class="hidden">
-        <h1>SNAKE 🐍</h1>
-        <canvas id="gameCanvas"></canvas>
-=======
-    
-    <div id="gameContainer">
-        
-        <canvas id="gameCanvas"></canvas>
+  <!-- 🎮 Contenedor principal del juego -->
+  <div id="gameContainer" class="hidden">
+    <h1 id="gameTitle">SNAKE 🐍</h1>
+    <canvas id="gameCanvas"></canvas>
+  </div>
 
-        <div id="startMenu">
-            <h1>SNAKE 🐍</h1>
-            <label for="appleCount">Elige la cantidad de manzanas:</label>
-            <input type="number" id="appleCount" value="1" min="1" max="20">
-            <button id="startButton">¡Iniciar Juego!</button>
-        </div>
-        
-        <h1 id="gameTitle" class="hidden">SNAKE 🐍</h1>
+  <!-- 🎵 Archivos de audio -->
+  <audio id="bgMusic" src="sounds/background.mp3" loop></audio>
+  <audio id="eatSound" src="sounds/eat.mp3"></audio>
+  <audio id="loseSound" src="sounds/lose.mp3"></audio>
 
->>>>>>> origin/Manzana-Tiempo-(Daniel)
-    </div>
-
-    <script src="script.js"></script>
+  <script src="script.js"></script>
 </body>
 </html>
