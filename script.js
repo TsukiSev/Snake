@@ -86,11 +86,24 @@ window.addEventListener("keydown", (e) => {
 function initializeGame() {
     spawnFoods();
     
-    // Inicia la música al comenzar el juego (después del clic del usuario)
-    if (bgMusic) { 
-        bgMusic.volume = 0.3;
-        // Usa .catch para manejar posibles restricciones de autoplay en navegadores
-        bgMusic.play().catch(e => console.warn("Error al reproducir música de fondo (posiblemente por restricciones del navegador).", e));
+    // Inicia la música con un chequeo de estado para mayor robustez
+    if (bgMusic) {
+        // Pequeño retraso para asegurar que el DOM ha cambiado de estado tras el clic
+        setTimeout(() => {
+            // readyState 3 significa que hay suficientes datos para empezar a reproducir
+            if (bgMusic.readyState >= 3) {
+                bgMusic.volume = 0.3;
+                bgMusic.play().catch(e => console.warn("Error al reproducir música de fondo. Intentando reiniciar la carga.", e));
+            } else {
+                // Si no está listo, forzamos la recarga y reintentamos
+                console.warn("Música de fondo no cargada. Reintentando.");
+                bgMusic.load(); // Intenta forzar la recarga
+                setTimeout(() => { 
+                    bgMusic.volume = 0.3;
+                    bgMusic.play().catch(e => console.error("Error final al reproducir la música de fondo.", e));
+                }, 200); // Pequeño retraso antes de reintentar la reproducción
+            }
+        }, 50); 
     }
     
     gameLoop();
@@ -154,7 +167,7 @@ function isCollisionWithBodyOrObstacle(head) {
         if (head.x === snake[i].x && head.y === snake[i].y) return true;
     }
     for (const obs of obstacles) {
-        if (head.x === obs.x && head.y === obs.y) return true;
+        if (head.x === obs.x && obs.y === head.y) return true;
     }
     return false;
 }
