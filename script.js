@@ -197,11 +197,12 @@ function update() {
 
     const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
 
-    // 1️⃣ Colisión con paredes
-    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height) {
-        endGame();
-        return;
-    }
+    // 🌍 Movimiento continuo por los bordes (Teletransporte)
+    if (head.x < 0) head.x = canvas.width - tileSize;
+    else if (head.x >= canvas.width) head.x = 0;
+
+    if (head.y < 0) head.y = canvas.height - tileSize;
+    else if (head.y >= canvas.height) head.y = 0;
 
     // 2️⃣ Colisión consigo misma o con obstáculos
     if (isCollisionWithBodyOrObstacle(head)) {
@@ -234,7 +235,6 @@ function update() {
 
             foods.splice(i, 1);
             ateFood = true;
-            // Eliminamos spawnFoods() de aquí, ya que updateFoodTimers() lo llama al final.
             break;
         }
     }
