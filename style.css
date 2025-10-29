@@ -2,8 +2,8 @@
 
 body {
     margin: 0;
-    background: #1e1e1e;
-    color: #fff;
+    background: #000;
+    color: #f4f6f7;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -26,6 +26,8 @@ body {
 /* Canvas del juego */
 #gameCanvas {
     box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+    border: 5px solid #0f0;
+    background: #191919;
 }
 
 /* --- MENÚ DE INICIO --- */
@@ -60,10 +62,10 @@ body {
     padding: 8px;
     font-size: 16px;
     text-align: center;
-    border: 1px solid #fff;
+    background-color: #191919;
+    color: #f4f6f7;
     border-radius: 4px;
-    background: #444;
-    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
 }
 
 /* Botón del menú */
@@ -71,17 +73,34 @@ body {
     padding: 10px 20px;
     font-size: 18px;
     cursor: pointer;
-    background-color: #00FF00;
+    background-color: #0f0;
     border: none;
     color: #000;
     font-weight: bold;
-    border-radius: 5px;
-    transition: background-color 0.2s;
+    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 15px;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    will-change: transform;
 }
 
-/* Hover del botón */
-#startMenu button:hover {
-    background-color: #2ecc71;
+/* Hover y focus del botón */
+#startMenu button:hover,
+#startMenu button:focus {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.25);
+}
+
+/* Icono y texto del botón */
+.btn-icon {
+    width: 20px;
+    height: 20px;
+    display: block;
+}
+
+.btn-text {
+    line-height: 1;
 }
 
 /* Ocultar elementos */
@@ -96,4 +115,55 @@ body {
     z-index: 5;
     font-size: 2rem;
     color: #10B981;
+}
+
+/* --- MODAL GAME OVER --- */
+#gameOverModal {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.6);
+    z-index: 50;
+}
+
+.modal-content {
+    background: #111;
+    color: #fff;
+    padding: 18px 22px;
+    border-radius: 8px;
+    min-width: 260px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    text-align: center;
+}
+
+.modal-actions {
+    margin-top: 12px;
+}
+
+.modal-actions button {
+    padding: 8px 14px;
+    font-weight: bold;
+    background: #00FF00;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.modal-actions button:hover {
+    transform: translateY(-1px);
+}
+
+.modal-actions button.secondary {
+    background: transparent;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.08);
+    margin-left: 8px;
+}
+
+.modal-actions button.secondary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(0,0,0,0.15);
 }

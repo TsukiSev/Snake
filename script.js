@@ -31,6 +31,21 @@ let obstacles = [];
 let obstacleCheckInterval = 5000; // Cada 5s se revisa si aparece uno nuevo
 let lastObstacleCheck = Date.now();
 
+// --- IMÁGENES ---
+const appleImg = new Image();
+appleImg.src = 'assets/apple-red.svg';
+const goldAppleImg = new Image();
+goldAppleImg.src = 'assets/apple-gold.svg';
+
+const bgImg = new Image();
+bgImg.src = 'assets/background.svg';
+
+const snakeHeadImg = new Image();
+snakeHeadImg.src = 'assets/snake-head.svg';
+const snakeBodyImg = new Image();
+snakeBodyImg.src = 'assets/snake-body.svg';
+
+// 📊 Estado del juego
 let score = 0;
 let gameOver = false;
 let gameSpeed = 100;
@@ -43,7 +58,6 @@ startButton.addEventListener("click", () => {
     startMenu.classList.add("hidden");
     gameContainer.classList.remove("hidden");
 
-    // Reinicio de estado del juego
     snake = [{ x: tileSize * 10, y: tileSize * 10 }];
     direction = { x: tileSize, y: 0 };
     newDirection = { x: tileSize, y: 0 };
@@ -61,7 +75,6 @@ startButton.addEventListener("click", () => {
 
 // --- CONTROL DEL TECLADO ---
 window.addEventListener("keydown", (e) => {
-  // Inicia música al primer movimiento
   if (bgMusic && bgMusic.paused) {
     bgMusic.volume = 0.3;
     bgMusic.play().catch(() => {});
@@ -118,6 +131,7 @@ function spawnFoods() {
       x: pos.x,
       y: pos.y,
       color: isGolden ? "gold" : "red",
+      img: isGolden ? goldAppleImg : appleImg,
       points: isGolden ? 10 : 1,
       spawnTime: Date.now(),
     });
@@ -159,14 +173,10 @@ function update() {
 
   // 💥 Colisiones
   for (let i = 1; i < snake.length; i++) {
-    if (snake[i].x === head.x && snake[i].y === head.y) {
-      return endGame();
-    }
+    if (snake[i].x === head.x && snake[i].y === head.y) return endGame();
   }
   for (const obs of obstacles) {
-    if (head.x === obs.x && head.y === obs.y) {
-      return endGame();
-    }
+    if (head.x === obs.x && head.y === obs.y) return endGame();
   }
 
   snake.unshift(head);
@@ -208,27 +218,58 @@ function update() {
 
 // 🎨 Dibujar todo
 function draw() {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fondo
+  if (bgImg && bgImg.complete) {
+    try {
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+    } catch {
+      ctx.fillStyle = "#111111";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  } else {
+    ctx.fillStyle = "#111111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
 
   // Obstáculos
   ctx.fillStyle = "#555";
-  obstacles.forEach((obs) => {
-    ctx.fillRect(obs.x, obs.y, tileSize, tileSize);
-  });
+  obstacles.forEach((obs) => ctx.fillRect(obs.x, obs.y, tileSize, tileSize));
 
   // Serpiente
-  snake.forEach((s, i) => {
-    ctx.fillStyle = i === 0 ? "#00FF00" : "#00A000";
-    ctx.fillRect(s.x, s.y, tileSize, tileSize);
+  snake.forEach((segment, index) => {
+    if (index === 0 && snakeHeadImg.complete) {
+      ctx.save();
+      const cx = segment.x + tileSize / 2;
+      const cy = segment.y + tileSize / 2;
+      ctx.translate(cx, cy);
+      let angle = 0;
+      if (direction.x > 0) angle = 0;
+      else if (direction.x < 0) angle = Math.PI;
+      else if (direction.y > 0) angle = Math.PI / 2;
+      else if (direction.y < 0) angle = -Math.PI / 2;
+      ctx.rotate(angle);
+      ctx.drawImage(snakeHeadImg, -tileSize / 2, -tileSize / 2, tileSize, tileSize);
+      ctx.restore();
+    } else if (index > 0 && snakeBodyImg.complete) {
+      ctx.drawImage(snakeBodyImg, segment.x, segment.y, tileSize, tileSize);
+    } else {
+      ctx.fillStyle = index === 0 ? "#00FF00" : "#00A000";
+      ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+      ctx.strokeStyle = "#000";
+      ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+    }
   });
 
   // Comidas con barra de tiempo
   const now = Date.now();
   foods.forEach((f) => {
     const remaining = Math.max(0, (APPLE_LIFETIME - (now - f.spawnTime)) / APPLE_LIFETIME);
-    ctx.fillStyle = f.color;
-    ctx.fillRect(f.x, f.y, tileSize, tileSize);
+    if (f.img && f.img.complete) {
+      ctx.drawImage(f.img, f.x, f.y, tileSize, tileSize);
+    } else {
+      ctx.fillStyle = f.color;
+      ctx.fillRect(f.x, f.y, tileSize, tileSize);
+    }
 
     ctx.fillStyle = "rgba(0,0,0,0.5)";
     ctx.fillRect(f.x, f.y + tileSize - 3, tileSize, 3);

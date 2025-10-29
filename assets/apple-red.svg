@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: none;
+      }
+
+      .cls-2 {
+        fill: #4c2000;
+      }
+
+      .cls-3 {
+        fill: lime;
+      }
+
+      .cls-4 {
+        fill: red;
+      }
+    </style>
+  </defs>
+  <g id="apple">
+    <rect class="cls-2" x="24" width="8" height="24"/>
+    <polygon class="cls-3" points="32 24 32 8 48 8 48 16 40 16 40 24 32 24"/>
+    <polygon class="cls-4" points="16 24 16 32 8 32 8 56 16 56 16 64 48 64 48 56 56 56 56 32 48 32 48 24 16 24"/>
+    <rect class="cls-1" width="64" height="64"/>
+  </g>
+</svg>
