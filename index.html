@@ -1,133 +1,187 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de Snake Avanzado</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Snake Avanzado</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- Estilos personalizados -->
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Courier New', Courier, monospace;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      background-color: #111827; /* gris oscuro */
-      color: white;
-      padding: 1rem;
-    }
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #111827; /* gris oscuro */
+            color: white;
+            padding: 1rem;
+        }
 
-    #gameContainer {
-      position: relative;
-      width: 600px;
-      height: 600px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      border: 4px solid #10B981;
-      border-radius: 1rem;
-    }
+        #gameContainer {
+            position: relative;
+            width: 600px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #10B981;
+            border-radius: 1rem;
+        }
 
-    #startMenu {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background-color: rgba(0, 0, 0, 0.7);
-      gap: 15px;
-      z-index: 10;
-      border-top: 4px solid #10B981;
-      border-radius: 1rem;
-      padding: 1rem;
-      box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
-    }
+        #startMenu {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.7);
+            gap: 15px;
+            z-index: 10;
+            border-top: 4px solid #10B981;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.6);
+        }
 
-    #startMenu h1 {
-      font-size: 3rem;
-      color: #10B981;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
+        #startMenu h1 {
+            font-size: 3rem;
+            color: #10B981;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
 
-    #startMenu input {
-      width: 80px;
-      padding: 0.5rem;
-      font-size: 1rem;
-      text-align: center;
-      border: 1px solid #fff;
-      border-radius: 0.25rem;
-      background: #444;
-      color: #fff;
-    }
+        #startMenu label {
+            text-align: center;
+        }
 
-    #startMenu button {
-      padding: 0.5rem 1rem;
-      font-size: 1.125rem;
-      font-weight: bold;
-      cursor: pointer;
-      background-color: #00FF00;
-      border: none;
-      border-radius: 0.25rem;
-      transition: background-color 0.2s;
-    }
+        #startMenu input {
+            width: 80px;
+            padding: 0.5rem;
+            font-size: 1rem;
+            text-align: center;
+            border: 1px solid #fff;
+            border-radius: 0.25rem;
+            background: #444;
+            color: #fff;
+        }
 
-    #startMenu button:hover {
-      background-color: #2ecc71;
-    }
+        #startMenu button, #gameOverModal button {
+            padding: 0.5rem 1rem;
+            font-size: 1.125rem;
+            font-weight: bold;
+            cursor: pointer;
+            background-color: #00FF00;
+            border: none;
+            border-radius: 0.25rem;
+            transition: background-color 0.2s, transform 0.2s;
+            color: #111827; /* Texto oscuro para el botón verde */
+        }
+        
+        #startMenu button:hover, #gameOverModal button:hover {
+            background-color: #2ecc71;
+            transform: translateY(-2px);
+        }
 
-    .hidden {
-      display: none !important;
-    }
+        .hidden {
+            display: none !important;
+        }
 
-    #gameCanvas {
-      box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
-      border-radius: 0.5rem;
-    }
+        #gameCanvas {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+            border-radius: 0.5rem;
+        }
 
-    .game-title {
-      position: absolute;
-      top: -50px;
-      font-size: 2rem;
-      color: #10B981;
-      z-index: 5;
-    }
-  </style>
+        .game-title {
+            position: absolute;
+            top: -50px;
+            font-size: 2rem;
+            color: #10B981;
+            z-index: 5;
+        }
+
+        /* --- MODAL GAME OVER (Nuevo Estilo) --- */
+        #gameOverModal {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.9);
+            gap: 20px;
+            z-index: 20;
+            border-radius: 1rem;
+            text-align: center;
+        }
+
+        #gameOverModal h2 {
+            font-size: 4rem;
+            color: #ff4d4d; /* Rojo para Game Over */
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.8);
+            margin: 0;
+        }
+
+        #finalScore {
+            font-size: 1.5rem;
+            color: #10B981;
+            margin-bottom: 1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+        }
+
+        .modal-actions button.secondary {
+            background: #555;
+            color: white;
+        }
+
+        .modal-actions button.secondary:hover {
+            background: #777;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="gameContainer">
-    <!-- Menú de inicio -->
-    <div id="startMenu">
-      <h1>SNAKE 🐍</h1>
-      <label for="appleCount">Elige la cantidad de manzanas (1-20):</label>
-      <input type="number" id="appleCount" value="1" min="1" max="20">
-      <button id="startButton">¡Iniciar Juego!</button>
+    <div id="gameContainer">
+        <div id="startMenu">
+            <h1>SNAKE 🐍</h1>
+            <label for="appleCount">Elige la cantidad de manzanas (1-20):</label>
+            <input type="number" id="appleCount" value="1" min="1" max="20">
+            <button id="startButton">¡Iniciar Juego!</button>
+        </div>
+
+        <h1 id="gameTitle" class="game-title hidden">SNAKE 🐍</h1>
+
+        <canvas id="gameCanvas" width="600" height="600"></canvas>
+
+        <div id="gameOverModal" class="hidden">
+            <h2>GAME OVER</h2>
+            <p id="finalScore">Puntuación: 0</p>
+            <div class="modal-actions">
+                <button id="retryButton">Reintentar</button>
+                <button id="menuButton" class="secondary">Menú Principal</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Título del juego -->
-    <h1 id="gameTitle" class="game-title hidden">SNAKE 🐍</h1>
+    <audio id="bgMusic" src="sounds/background.mp3" loop preload="auto"></audio>
+    <audio id="eatSound" src="sounds/eat.mp3" preload="auto"></audio>
+    <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
 
-    <!-- Canvas del juego -->
-    <canvas id="gameCanvas" width="600" height="600"></canvas>
-  </div>
-
-  <!-- Archivos de audio -->
-  <audio id="bgMusic" src="sounds/background.mp3" loop preload="auto"></audio>
-  <audio id="eatSound" src="sounds/eat.mp3" preload="auto"></audio>
-  <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
-
-  <script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
