@@ -289,6 +289,8 @@
                 else if (k === "arrowleft" || k === "a") { if (direction.x === 0) newDirection = { x: -tileSize, y: 0 }; }
                 else if (k === "arrowright" || k === "d") { if (direction.x === 0) newDirection = { x: tileSize, y: 0 }; }
             }
+            
+            // Control de menús
             if (k === "enter") { 
                 if (!startMenu?.classList.contains("hidden")) startGame(); 
             }
@@ -300,10 +302,12 @@
             }
         });
 
+        // --- Conexión de Botones ---
         startButton?.addEventListener("click", startGame);
         retryButton?.addEventListener("click", restartSameSettings);
         settingsButton?.addEventListener("click", showStartMenu);
 
+        // Inicial
         showStartMenu();
     }
 })();
