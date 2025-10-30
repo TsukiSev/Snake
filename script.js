@@ -52,7 +52,7 @@
             let tries = 0;
             while (tries < 5000) {
                 const pos = { x: randInt(0, gridSize - 1) * tileSize, y: randInt(0, gridSize - 1) * tileSize };
-                const occSnake = snake?.some(s => s.x === pos.x && s.y === pos.y);
+                const occSnake = snake?.some(s => s.x === pos.x && s.y === s.y);
                 const occFood = foods?.some(f => f.x === pos.x && f.y === f.y);
                 const occObs = obstacles?.some(o => o.x === pos.x && o.y === o.y);
                 if (!occSnake && !occFood && !occObs) return pos;
@@ -63,6 +63,9 @@
 
         function spawnFoods(count) {
             for (let i = 0; i < count; i++) {
+                // 🛠️ FIX: Verificar si la cantidad actual es menor al límite antes de generar.
+                if (foods.length >= numberOfApples) continue;
+
                 const isGold = Math.random() < 0.2; 
                 foods.push({
                     ...randomFreeCell(),
@@ -99,7 +102,7 @@
             obstacles = []; 
             score = 0;
             gameOver = false;
-            spawnFoods(numberOfApples); 
+            // La llamada a spawnFoods se hace en startGame()
             lastObstacleCheck = Date.now();
         }
         function startGame() {
@@ -107,12 +110,14 @@
             numberOfApples = Math.min(20, Math.max(1, isNaN(parsed) ? 1 : parsed));
             hideMenusForPlay();
             initState(); 
+            spawnFoods(numberOfApples); // Inicializa las comidas aquí.
             try { if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play().catch(()=>{}); } } catch {}
             loopHandle = setTimeout(gameLoop, gameSpeed);
         }
         function restartSameSettings() {
             hideMenusForPlay();
             initState(); 
+            spawnFoods(numberOfApples); // Vuelve a inicializar las comidas.
             try { if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play().catch(()=>{}); } } catch {}
             loopHandle = setTimeout(gameLoop, gameSpeed);
         }
@@ -125,7 +130,7 @@
             setTimeout(showGameOverMenu, 500); 
         }
 
-        // --- Lógica Principal del Juego (Update omitida, asumida correcta) ---
+        // --- Lógica Principal del Juego (Update) ---
         function update() {
             direction = newDirection;
             if (direction.x === 0 && direction.y === 0) return; 
@@ -144,18 +149,35 @@
 
             snake.unshift(head);
 
+            let growthFactor = 1; // Factor de crecimiento por defecto (manzana roja)
+            let foodEaten = false; // Bandera para saber si se comió comida
+
             // 🍎 Comprobar si la manzana fue comida
             const foodIndex = foods.findIndex(f => f.x === head.x && f.y === head.y);
             if (foodIndex >= 0) {
+                foodEaten = true;
                 const food = foods[foodIndex];
-                score += (food.color === "gold") ? 10 : 1;
+                
+                if (food.color === "gold") {
+                    score += 10;
+                    growthFactor = 10; 
+                } else {
+                    score += 1;
+                    growthFactor = 1;
+                }
+                
                 try { if (eatSound) { eatSound.currentTime = 0; eatSound.play().catch(()=>{}); } } catch {}
                 foods.splice(foodIndex, 1);
-                spawnFoods(1);
             } else {
-                snake.pop();
+                snake.pop(); // Mover la cola si no come
             }
             
+            // Si el crecimiento es mayor a 1 (dorada), hacemos un "hack" para crecimiento instantáneo.
+            for (let i = 0; i < growthFactor - 1; i++) {
+                // Añade segmentos al final de la cola para crecimiento instantáneo
+                snake.push({ x: snake[snake.length - 1].x, y: snake[snake.length - 1].y });
+            }
+
             // 💀 Lógica dinámica de Obstáculos
             if (Date.now() - lastObstacleCheck > obstacleCheckInterval) {
                 if (obstacles.length < 30) { 
@@ -166,13 +188,25 @@
             
             // 🍎 Lógica de Manzanas Expiradas
             const now = Date.now();
+            let expiredCount = 0;
+            
+            // 🛠️ CORRECCIÓN: Aplicar la lógica de expiración a TODAS las comidas,
+            // independientemente de si son rojas o doradas.
             foods = foods.filter(food => {
+                // Comprobamos si ha expirado (ahora aplica a todas)
                 if ((now - food.birthTime) > APPLE_LIFETIME) { 
-                    spawnFoods(1);
-                    return false; 
+                    expiredCount++;
+                    return false; // Se elimina
                 }
-                return true; 
+                return true; // Se mantiene
             });
+
+            // Lógica de REEMPLAZO DE COMIDA (unificada y corregida)
+            const neededReplacements = expiredCount + (foodEaten ? 1 : 0); 
+
+            if (neededReplacements > 0) {
+                spawnFoods(neededReplacements);
+            }
         }
 
         function draw() {
@@ -212,12 +246,19 @@
                     ctx.fillRect(food.x, food.y, tileSize, tileSize);
                 }
                 
-                // Dibujar la barra de tiempo
+                // 🛠️ CORRECCIÓN: La barra de tiempo ahora se calcula dinámicamente para TODAS.
                 const timeElapsed = Date.now() - food.birthTime;
                 const timePercent = 1 - (timeElapsed / APPLE_LIFETIME);
-                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                
+                // 1. Dibujar el fondo de la barra
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)"; // Fondo de la barra
                 ctx.fillRect(food.x, food.y + tileSize - 3, tileSize, 3);
+                
+                // 2. Dibujar el progreso de la barra
+                // Lógica de color de la barra de tiempo: ahora aplica a ambas
                 ctx.fillStyle = timePercent > 0.6 ? "#00FF00" : timePercent > 0.3 ? "#FFFF00" : "#FF0000";
+                
+                // El ancho de la barra es el porcentaje del tiempo restante
                 ctx.fillRect(food.x, food.y + tileSize - 3, tileSize * timePercent, 3);
             });
 
