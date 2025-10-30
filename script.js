@@ -35,7 +35,7 @@
         let gameSpeed = 90;
 
         // 🍎 Configuración de Comida y Obstáculos
-        const APPLE_LIFETIME = 7000; // 7 segundos para manzanas doradas
+        const APPLE_LIFETIME = 7000; // 7 segundos para TODAS las manzanas
         let obstacleCheckInterval = 5000; // Generar obstáculo cada 5 segundos
 
         // --- Estado del Juego ---
@@ -72,7 +72,6 @@
             }
         }
         
-        // Esta función ya no se llama en initState, solo se mantiene por si se necesita
         function spawnObstacles(count = 10) {
             obstacles = [];
             for (let i = 0; i < count; i++) obstacles.push(randomFreeCell());
@@ -109,9 +108,6 @@
             gameOver = false;
             
             spawnFoods(numberOfApples); // Genera la cantidad inicial de manzanas
-            
-            // 🛑 CORRECCIÓN: Eliminamos spawnObstacles(10) para que no haya obstáculos iniciales
-            
             lastObstacleCheck = Date.now();
         }
 
@@ -186,13 +182,14 @@
                 lastObstacleCheck = Date.now();
             }
             
-            // 🍎 Lógica de Manzanas Doradas Expiradas
+            // 🍎 Lógica de Manzanas Expiradas (Aplica a TODAS)
             const now = Date.now();
             foods = foods.filter(food => {
-                if (food.color === 'gold' && (now - food.birthTime) > APPLE_LIFETIME) {
-                    // Reemplaza la manzana dorada expirada con una nueva 
+                // Si el tiempo de vida (7s) ha pasado para CUALQUIER manzana
+                if ((now - food.birthTime) > APPLE_LIFETIME) { 
+                    // Reemplaza la manzana expirada con una nueva 
                     spawnFoods(1);
-                    return false; // Elimina la manzana dorada
+                    return false; // Elimina la manzana
                 }
                 return true; // Mantiene la manzana
             });
@@ -206,7 +203,7 @@
             ctx.fillStyle = "#6B7280";
             obstacles.forEach(o => { ctx.fillRect(o.x, o.y, tileSize, tileSize); });
 
-            // 🍎 Comida (Diferentes colores y barra de tiempo para las doradas)
+            // 🍎 Comida (Diferentes colores y barra de tiempo para todas)
             foods.forEach(food => {
                 const isGold = food.color === "gold";
                 
@@ -214,19 +211,17 @@
                 ctx.fillStyle = isGold ? "#FFD700" : "#F53838"; 
                 ctx.fillRect(food.x, food.y, tileSize, tileSize);
                 
-                // Si es dorada, dibujar la barra de tiempo
-                if (isGold) {
-                    const timeElapsed = Date.now() - food.birthTime;
-                    const timePercent = 1 - (timeElapsed / APPLE_LIFETIME);
-                    
-                    // Barra de tiempo: Fondo (Gris oscuro)
-                    ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
-                    ctx.fillRect(food.x, food.y + tileSize - 3, tileSize, 3);
-                    
-                    // Barra de tiempo: Color 
-                    ctx.fillStyle = timePercent > 0.6 ? "#00FF00" : timePercent > 0.3 ? "#FFFF00" : "#FF0000";
-                    ctx.fillRect(food.x, food.y + tileSize - 3, tileSize * timePercent, 3);
-                }
+                // Dibujar la barra de tiempo para TODAS las manzanas
+                const timeElapsed = Date.now() - food.birthTime;
+                const timePercent = 1 - (timeElapsed / APPLE_LIFETIME);
+                
+                // Barra de tiempo: Fondo (Gris oscuro)
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(food.x, food.y + tileSize - 3, tileSize, 3);
+                
+                // Barra de tiempo: Color 
+                ctx.fillStyle = timePercent > 0.6 ? "#00FF00" : timePercent > 0.3 ? "#FFFF00" : "#FF0000";
+                ctx.fillRect(food.x, food.y + tileSize - 3, tileSize * timePercent, 3);
             });
 
             // Serpiente (Verde)
