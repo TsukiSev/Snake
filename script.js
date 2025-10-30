@@ -1,227 +1,332 @@
-// 🐍 Juego: Snake - Versión Mejorada
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
+// 🐍 Juego: Snake Avanzado (Lógica de Tiempo, Obstáculos, Assets y Menú Modal)
 
-// Elementos del DOM para el menú
-const startMenu = document.getElementById('startMenu');
-const gameContainer = document.getElementById('gameContainer');
-const appleCountInput = document.getElementById('appleCount');
-const startButton = document.getElementById('startButton');
+(function () {
+    // --- ACCESO AL DOM Y CONFIGURACIÓN INICIAL ---
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas?.getContext?.("2d");
 
-// 🔧 Ajustes del lienzo y del juego
-const tileSize = 20;
-canvas.width = 600;
-canvas.height = 600;
+    // Elementos del DOM para el menú principal
+    const startMenu = document.getElementById('startMenu');
+    const gameContainer = document.getElementById('gameContainer');
+    const appleCountInput = document.getElementById('appleCount');
+    const startButton = document.getElementById('startButton');
 
-// 🐍 Configuración de la serpiente
-let snake = [{ x: tileSize * 10, y: tileSize * 10 }];
-let direction = { x: 0, y: 0 };
-let newDirection = { x: 0, y: 0 };
+    // Elementos del DOM para el MODAL DE GAME OVER (NUEVOS)
+    const gameOverModal = document.getElementById('gameOverModal');
+    const finalScoreText = document.getElementById('finalScoreText');
+    const retryButton = document.getElementById('retryButton');
+    const backToMenuButton = document.getElementById('backToMenuButton');
 
-// 🍎 Comida (Ahora es un array para múltiples manzanas)
-let foods = [];
-let numberOfApples = 1;
+    // 🎵 Sonidos 
+    const bgMusic = document.getElementById("bgMusic");
+    const eatSound = document.getElementById("eatSound");
+    const loseSound = document.getElementById("loseSound");
 
-// Imágenes de manzanas (SVG externos 64x64)
-const appleImg = new Image();
-appleImg.src = 'assets/apple-red.svg';
-const goldAppleImg = new Image();
-goldAppleImg.src = 'assets/apple-gold.svg';
+    if (!canvas || !ctx) return console.error("[Snake] Canvas no disponible.");
 
-// Imagen de fondo (SVG externo)
-const bgImg = new Image();
-bgImg.src = 'assets/background.svg';
+    // 🔧 Ajustes del lienzo y del juego
+    const tileSize = 20;
+    const gridSize = canvas.width / tileSize;
+    canvas.width = 600;
+    canvas.height = 600;
+    let gameSpeed = 90; // Velocidad de juego avanzado
 
-// Imágenes de la serpiente (SVG externos 64x64)
-const snakeHeadImg = new Image();
-snakeHeadImg.src = 'assets/snake-head.svg';
-const snakeBodyImg = new Image();
-snakeBodyImg.src = 'assets/snake-body.svg';
+    // 🍎 Configuración Avanzada
+    const APPLE_LIFETIME = 7000; // 7 segundos de vida
+    let obstacleCheckInterval = 5000; // Obstáculos dinámicos
 
-// 📊 Estado del juego
-let score = 0;
-let gameOver = false;
-let gameSpeed = 100;
+    // 🖼️ CARGA DE IMÁGENES (ASSETS)
+    const appleImg = new Image(); appleImg.src = 'assets/apple-red.svg';
+    const goldAppleImg = new Image(); goldAppleImg.src = 'assets/apple-gold.svg';
+    const bgImg = new Image(); bgImg.src = 'assets/background.svg';
+    const snakeHeadImg = new Image(); snakeHeadImg.src = 'assets/snake-head.svg';
+    const snakeBodyImg = new Image(); snakeBodyImg.src = 'assets/snake-body.svg';
 
-// --- CONTROL DEL JUEGO ---
+    // 📊 Estado del juego
+    let snake, direction, newDirection, foods, obstacles, score, gameOver, numberOfApples;
+    let lastObstacleCheck = Date.now();
+    let loopHandle = null;
 
-startButton.addEventListener('click', () => {
-    const appleCount = parseInt(appleCountInput.value);
-    if (appleCount > 0 && appleCount <= 20) {
-        numberOfApples = appleCount;
+    // --- UTILIDADES ---
+    function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+    function randomFreeCell() {
+        let tries = 0;
+        while (tries < 5000) {
+            const pos = { x: randInt(0, gridSize - 1) * tileSize, y: randInt(0, gridSize - 1) * tileSize };
+            const occSnake = snake?.some(s => s.x === pos.x && s.y === pos.y);
+            const occFood = foods?.some(f => f.x === pos.x && f.y === pos.y);
+            const occObs = obstacles?.some(o => o.x === pos.x && o.y === o.y);
+            if (!occSnake && !occFood && !occObs) return pos;
+            tries++;
+        }
+        return { x: 0, y: 0 };
+    }
+
+    function isCollisionWithBody(head) {
+        for (let i = 1; i < snake.length; i++) {
+            if (head.x === snake[i].x && head.y === snake[i].y) return true;
+        }
+        return false;
+    }
+
+    function initState() {
+        snake = [{ x: tileSize * 10, y: tileSize * 10 }];
+        direction = { x: tileSize, y: 0 };
+        newDirection = { x: tileSize, y: 0 };
+        foods = [];
+        obstacles = [];
+        score = 0;
+        gameOver = false;
+        
+        spawnFoods(numberOfApples); 
+        lastObstacleCheck = Date.now();
+    }
+    
+    function spawnFoods(count) {
+        for (let i = 0; i < count; i++) {
+            const isGolden = Math.random() < 0.2; // 20% probabilidad de ser dorada
+            foods.push({
+                ...randomFreeCell(),
+                color: isGolden ? "gold" : "red",
+                birthTime: Date.now(),
+                img: isGolden ? goldAppleImg : appleImg,
+                points: isGolden ? 10 : 1
+            });
+        }
+    }
+    
+    // --- CONTROL DE INICIO/FIN (FLUJO CORREGIDO) ---
+
+    function showStartMenu() {
+        startMenu.classList.remove('hidden');
+        gameContainer.classList.add('hidden');
+        gameOverModal.classList.add('hidden');
+    }
+
+    /**
+     * Inicia el juego.
+     * @param {boolean} useCurrentSettings Si es true, usa el valor de numberOfApples de la partida anterior.
+     */
+    function startGame(useCurrentSettings = false) {
+        if (!useCurrentSettings) {
+            const parsed = parseInt(appleCountInput?.value ?? "1", 10);
+            numberOfApples = Math.min(20, Math.max(1, isNaN(parsed) ? 1 : parsed));
+        }
+
         startMenu.classList.add('hidden');
+        gameOverModal.classList.add('hidden');
         gameContainer.classList.remove('hidden');
-        initializeGame();
-    } else {
-        alert('Por favor, introduce un número de manzanas entre 1 y 20.');
+
+        initState(); 
+        
+        try { if (bgMusic) { bgMusic.currentTime = 0; bgMusic.play().catch(()=>{}); } } catch {}
+        loopHandle = setTimeout(gameLoop, gameSpeed);
     }
-});
-
-window.addEventListener("keydown", (e) => {
-    switch (e.key.toLowerCase()) {
-        case "w": case "arrowup":
-            if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
-            break;
-        case "s": case "arrowdown":
-            if (direction.y === 0) newDirection = { x: 0, y: tileSize };
-            break;
-        case "a": case "arrowleft":
-            if (direction.x === 0) newDirection = { x: -tileSize, y: 0 };
-            break;
-        case "d": case "arrowright":
-            if (direction.x === 0) newDirection = { x: tileSize, y: 0 };
-            break;
-    }
-});
-
-// --- FUNCIONES DEL JUEGO ---
-
-function initializeGame() {
-    spawnFoods();
-    gameLoop();
-}
-
-function spawnFoods() {
-    while (foods.length < numberOfApples) {
-        const isGolden = Math.random() < 0.1;
-        const newFood = {
-            x: Math.floor(Math.random() * (canvas.width / tileSize)) * tileSize,
-            y: Math.floor(Math.random() * (canvas.height / tileSize)) * tileSize,
-            color: isGolden ? "gold" : "red",
-            img: isGolden ? goldAppleImg : appleImg,
-            points: isGolden ? 10 : 1
-        };
-        foods.push(newFood);
-    }
-}
-
-function update() {
-    if (gameOver) return;
-
-    direction = newDirection;
-    const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
-
-    if (head.x < 0 || head.x >= canvas.width || head.y < 0 || head.y >= canvas.height || isCollisionWithBody(head)) {
-        endGame();
-        return;
-    }
-
-    snake.unshift(head);
-
-    let ateFood = false;
-    for (let i = foods.length - 1; i >= 0; i--) {
-        let food = foods[i];
-        if (head.x === food.x && head.y === food.y) {
-            score += food.points;
-
-            // ---- ¡CAMBIO IMPORTANTE AQUÍ! ----
-            // Si es una manzana dorada, añade 9 segmentos extra a la cola.
-            // (El crecimiento normal de 1 segmento ya está incluido, sumando 10 en total).
-            if (food.points === 10) {
-                const tail = snake[snake.length - 1]; // Identifica cuál es la cola
-                for (let j = 0; j < 9; j++) {
-                    snake.push({ ...tail }); // Agrega 9 copias de la cola al final
-                }
-            }
-            // ---- FIN DEL CAMBIO ----
-
-            foods.splice(i, 1);
-            ateFood = true;
-            spawnFoods();
-            break;
-        }
-    }
-
-    if (!ateFood) {
-        snake.pop();
-    }
-}
-
-function isCollisionWithBody(head) {
-    for (let i = 1; i < snake.length; i++) {
-        if (head.x === snake[i].x && head.y === snake[i].y) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function draw() {
-    // Dibujar imagen de fondo si está cargada, si no usar color sólido
-    if (bgImg && bgImg.complete) {
+    
+    function endGame() {
+        gameOver = true;
+        if (loopHandle !== null) clearTimeout(loopHandle);
+        
         try {
+            if (bgMusic) bgMusic.pause();
+            if (loseSound) { loseSound.currentTime = 0; loseSound.play().catch(()=>{}); }
+        } catch {}
+
+        // Muestra el modal de Game Over
+        if (finalScoreText) finalScoreText.textContent = `Puntuación: ${score}`;
+        gameOverModal.classList.remove('hidden');
+    }
+
+    // --- BUCLE PRINCIPAL ---
+
+    function update() {
+        if (gameOver) return;
+
+        direction = newDirection;
+        const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+
+        // Colisiones: Borde (Teletransporte)
+        if (head.x < 0) head.x = canvas.width - tileSize;
+        else if (head.x >= canvas.width) head.x = 0;
+        if (head.y < 0) head.y = canvas.height - tileSize;
+        else if (head.y >= canvas.height) head.y = 0;
+
+        // Colisiones: Cuerpo y Obstáculos
+        if (isCollisionWithBody(head)) return endGame();
+        if (obstacles.some(o => o.x === head.x && o.y === head.y)) return endGame();
+
+        snake.unshift(head);
+
+        let ateFood = false;
+        for (let i = foods.length - 1; i >= 0; i--) {
+            let food = foods[i];
+            if (head.x === food.x && head.y === food.y) {
+                score += food.points;
+                
+                // Crecimiento de 10 segmentos para la dorada
+                if (food.points === 10) {
+                    const tail = snake[snake.length - 1]; 
+                    for (let j = 0; j < 9; j++) {
+                        snake.push({ ...tail }); 
+                    }
+                }
+                
+                try { if (eatSound) { eatSound.currentTime = 0; eatSound.play().catch(()=>{}); } } catch {}
+                foods.splice(i, 1);
+                ateFood = true;
+                spawnFoods(1); 
+                break;
+            }
+        }
+
+        if (!ateFood) {
+            snake.pop(); 
+        }
+
+        // 💀 Lógica dinámica de Obstáculos
+        if (Date.now() - lastObstacleCheck > obstacleCheckInterval) {
+            if (obstacles.length < 30) { 
+                obstacles.push(randomFreeCell());
+            }
+            lastObstacleCheck = Date.now();
+        }
+
+        // 🍎 Lógica de Manzanas Expiradas (Aplica a TODAS)
+        const now = Date.now();
+        foods = foods.filter(food => {
+            // Se asume que todas las manzanas tienen birthTime
+            if (food.birthTime && (now - food.birthTime) > APPLE_LIFETIME) { 
+                spawnFoods(1);
+                return false; 
+            }
+            return true; 
+        });
+    }
+
+    function draw() {
+        // 🖼️ Fondo
+        if (bgImg && bgImg.complete) {
             ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
-        } catch (e) {
-            // En casos raros drawImage puede fallar por CORS o por datos inválidos; fallback
+        } else {
             ctx.fillStyle = "#111111";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
-    } else {
-        ctx.fillStyle = "#111111";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Obstáculos (Gris)
+        ctx.fillStyle = "#6B7280";
+        obstacles.forEach(o => { ctx.fillRect(o.x, o.y, tileSize, tileSize); });
+
+        // 🍎 Comida (Con assets y barra de tiempo)
+        const now = Date.now();
+        foods.forEach(food => {
+            // Imagen de la manzana
+            if (food.img && food.img.complete) {
+                ctx.drawImage(food.img, food.x, food.y, tileSize, tileSize);
+            } else {
+                ctx.fillStyle = food.color;
+                ctx.fillRect(food.x, food.y, tileSize, tileSize);
+            }
+
+            // Barra de tiempo
+            if (food.birthTime) {
+                const timeElapsed = now - food.birthTime;
+                const timePercent = 1 - (timeElapsed / APPLE_LIFETIME);
+                
+                ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+                ctx.fillRect(food.x, food.y + tileSize - 3, tileSize, 3);
+                
+                ctx.fillStyle = timePercent > 0.6 ? "#00FF00" : timePercent > 0.3 ? "#FFFF00" : "#FF0000";
+                ctx.fillRect(food.x, food.y + tileSize - 3, tileSize * timePercent, 3);
+            }
+        });
+
+        // 🐍 Serpiente (Con imágenes y rotación para la cabeza)
+        snake.forEach((segment, index) => {
+            if (index === 0) {
+                // Cabeza
+                if (snakeHeadImg && snakeHeadImg.complete) {
+                    ctx.save();
+                    const cx = segment.x + tileSize / 2;
+                    const cy = segment.y + tileSize / 2;
+                    ctx.translate(cx, cy);
+                    let angle = 0;
+                    if (direction.x > 0) angle = 0; 
+                    else if (direction.x < 0) angle = Math.PI; 
+                    else if (direction.y > 0) angle = Math.PI / 2; 
+                    else if (direction.y < 0) angle = -Math.PI / 2; 
+                    ctx.rotate(angle);
+                    ctx.drawImage(snakeHeadImg, -tileSize / 2, -tileSize / 2, tileSize, tileSize);
+                    ctx.restore();
+                } else {
+                    ctx.fillStyle = "#00FF00"; 
+                    ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+                }
+            } else {
+                // Cuerpo/cola
+                if (snakeBodyImg && snakeBodyImg.complete) {
+                    ctx.drawImage(snakeBodyImg, segment.x, segment.y, tileSize, tileSize);
+                } else {
+                    ctx.fillStyle = "#00A000"; 
+                    ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
+                }
+            }
+        });
+
+        // Puntaje
+        ctx.fillStyle = "white";
+        ctx.font = "24px 'Courier New', Courier, monospace";
+        ctx.fillText("Puntos: " + score, 10, 30);
     }
 
-    snake.forEach((segment, index) => {
-        // Cabeza
-        if (index === 0) {
-            if (snakeHeadImg && snakeHeadImg.complete) {
-                // Dibujar la cabeza rotada según la dirección actual
-                ctx.save();
-                const cx = segment.x + tileSize / 2;
-                const cy = segment.y + tileSize / 2;
-                ctx.translate(cx, cy);
-                let angle = 0;
-                if (direction.x > 0) angle = 0; // derecha
-                else if (direction.x < 0) angle = Math.PI; // izquierda
-                else if (direction.y > 0) angle = Math.PI / 2; // abajo
-                else if (direction.y < 0) angle = -Math.PI / 2; // arriba
-                ctx.rotate(angle);
-                ctx.drawImage(snakeHeadImg, -tileSize / 2, -tileSize / 2, tileSize, tileSize);
-                ctx.restore();
-            } else {
-                ctx.fillStyle = "#00FF00";
-                ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-                ctx.strokeStyle = "#000";
-                ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
+    function gameLoop() {
+        if (gameOver) return;
+        update();
+        draw();
+        loopHandle = setTimeout(gameLoop, gameSpeed);
+    }
+
+    // --- CONEXIONES DE BOTONES Y CONTROLES ---
+    startButton?.addEventListener('click', () => startGame(false));
+
+    // Botones del modal de Game Over
+    retryButton?.addEventListener('click', () => startGame(true)); 
+    backToMenuButton?.addEventListener('click', showStartMenu); 
+
+    window.addEventListener("keydown", (e) => {
+        const k = e.key.toLowerCase();
+        
+        // Control de movimiento (solo si el juego está activo)
+        if (!gameContainer.classList.contains('hidden')) { 
+            switch (k) {
+                case "w": case "arrowup":
+                    if (direction.y === 0) newDirection = { x: 0, y: -tileSize };
+                    break;
+                case "s": case "arrowdown":
+                    if (direction.y === 0) newDirection = { x: 0, y: tileSize };
+                    break;
+                case "a": case "arrowleft":
+                    if (direction.x === 0) newDirection = { x: -tileSize, y: 0 };
+                    break;
+                case "d": case "arrowright":
+                    if (direction.x === 0) newDirection = { x: tileSize, y: 0 };
+                    break;
+                case "escape":
+                    endGame(); // Pausa o termina
+                    break;
             }
-        } else {
-            // Cuerpo/cola
-            if (snakeBodyImg && snakeBodyImg.complete) {
-                ctx.drawImage(snakeBodyImg, segment.x, segment.y, tileSize, tileSize);
-            } else {
-                ctx.fillStyle = "#00A000";
-                ctx.fillRect(segment.x, segment.y, tileSize, tileSize);
-                ctx.strokeStyle = "#000";
-                ctx.strokeRect(segment.x, segment.y, tileSize, tileSize);
-            }
+        }
+        
+        // Control de menús (teclas de acceso rápido)
+        if (!startMenu?.classList.contains('hidden') && k === "enter") {
+            startGame(false);
+        } else if (!gameOverModal?.classList.contains('hidden') && k === "r") {
+            startGame(true);
+        } else if (!gameOverModal?.classList.contains('hidden') && k === "escape") {
+            showStartMenu();
         }
     });
 
-    foods.forEach(food => {
-        // Dibujar la imagen SVG si está cargada; en caso contrario usar el rectángulo de color
-        if (food.img && food.img.complete) {
-            // Ajustamos para centrar si la imagen es mayor que el tileSize
-            ctx.drawImage(food.img, food.x, food.y, tileSize, tileSize);
-        } else {
-            ctx.fillStyle = food.color;
-            ctx.fillRect(food.x, food.y, tileSize, tileSize);
-        }
-    });
-
-    ctx.fillStyle = "white";
-    ctx.font = "24px 'Courier New', Courier, monospace";
-    ctx.fillText("Score: " + score, 10, 30);
-}
-
-function endGame() {
-    gameOver = true;
-    alert(`💀 Game Over!\nPuntuación final: ${score}`);
-    window.location.reload();
-}
-
-function gameLoop() {
-    if (gameOver) return;
-    update();
-    draw();
-    setTimeout(gameLoop, gameSpeed);
-}
+    // Inicialización: Asegurar que al inicio solo se vea el menú.
+    showStartMenu();
+})();

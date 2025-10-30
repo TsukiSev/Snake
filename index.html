@@ -18,6 +18,21 @@
         <canvas id="gameCanvas"></canvas>
     </div>
 
+    <div id="gameOverModal" class="hidden">
+        <div class="modal-content">
+            <h2>💀 ¡GAME OVER!</h2>
+            <p id="finalScoreText">Puntuación: 0</p>
+            <div class="modal-actions">
+                <button id="retryButton">Reintentar</button>
+                <button id="backToMenuButton" class="secondary">Menú Principal</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="bgMusic" src="sounds/background.mp3" loop preload="auto"></audio>
+    <audio id="eatSound" src="sounds/eat.mp3" preload="auto"></audio>
+    <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
+    
     <script src="script.js"></script>
 </body>
 </html>
