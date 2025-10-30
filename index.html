@@ -34,9 +34,8 @@
     .game-title { position: absolute; top: -50px; z-index: 5; font-size: 2rem; color: #10B981; }
   </style>
 </head>
-<body class="bg-gray-900 text-white font-sans flex items-center justify-center min-h-screen p-4">
+<body class="bg-black text-white font-sans flex items-center justify-center min-h-screen p-4">
   <div id="gameContainer" class="border-4 border-green-500 rounded-lg">
-    <!-- MENÚ INICIO (overlay ancho completo del lienzo) -->
     <div id="startMenu" class="menuOverlay rounded-xl shadow-2xl border-t-4 border-green-500">
       <h1 class="text-4xl font-extrabold text-green-400 text-center">SNAKE 🐍</h1>
       <label for="appleCount" class="block text-sm font-medium text-gray-300">Elige la cantidad de manzanas (1-20):</label>
@@ -60,7 +59,11 @@
     <canvas id="gameCanvas" width="600" height="600"></canvas>
   </div>
 
-  <!-- 🎵 AUDIO -->
+  <img id="apple-red-asset" src="assets/apple-red.svg" class="hidden">
+  <img id="apple-gold-asset" src="assets/apple-gold.svg" class="hidden">
+  <img id="snake-head-asset" src="assets/snake-head.svg" class="hidden">
+  <img id="snake-body-asset" src="assets/snake-body.svg" class="hidden">
+
   <audio id="bgMusic" src="sounds/background.mp3" loop preload="auto"></audio>
   <audio id="eatSound" src="sounds/eat.mp3" preload="auto"></audio>
   <audio id="loseSound" src="sounds/lose.mp3" preload="auto"></audio>
